@@ -101,7 +101,7 @@
   </div>
 
   <!-- QR generation lib (pure client-side). For fully offline use, download this file and reference it locally. -->
-  <script src="https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
   <script>
     const $ = (id) => document.getElementById(id);
 
@@ -156,6 +156,12 @@
     }
 
     async function renderQR(){
+      if (typeof QRCode === 'undefined') {
+        console.error('QRCode library not loaded');
+        $("preview").textContent = 'Error: QRCode library failed to load. Check your internet connection.';
+        return;
+      }
+      
       const vcard = makeVCard();
       const size = Math.max(128, Math.min(parseInt($("size").value||"384",10), 2048));
       const ecl = $("ecl").value || 'M';
@@ -201,9 +207,13 @@
     });
 
     // Initial render after QRCode library is loaded
-    window.addEventListener('load', () => {
-      renderQR();
-    });
+    if (document.readyState === 'loading') {
+      window.addEventListener('DOMContentLoaded', () => {
+        setTimeout(renderQR, 100);
+      });
+    } else {
+      setTimeout(renderQR, 100);
+    }
   </script>
 </body>
 </html>
