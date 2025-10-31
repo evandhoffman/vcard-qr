@@ -94,14 +94,14 @@
     </div>
 
     <div class="card">
-      <div class="qrbox"><canvas id="qrCanvas" width="384" height="384"></canvas></div>
+      <div class="qrbox"><div id="qrCanvas"></div></div>
       <label>Preview vCard payload</label>
       <pre class="code" id="preview"></pre>
     </div>
   </div>
 
   <!-- QR generation lib (pure client-side). For fully offline use, download this file and reference it locally. -->
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script src="qrcode.min.js"></script>
   <script>
     const $ = (id) => document.getElementById(id);
 
@@ -165,15 +165,19 @@
       const vcard = makeVCard();
       const size = Math.max(128, Math.min(parseInt($("size").value||"384",10), 2048));
       const ecl = $("ecl").value || 'M';
-      const canvas = $("qrCanvas");
-      canvas.width = size; canvas.height = size;
-
-      // Render QR (UTF‑8 safe)
-      await QRCode.toCanvas(canvas, vcard, {
-        errorCorrectionLevel: ecl,
+      
+      // Clear previous QR code
+      const qrbox = $("qrCanvas").parentElement;
+      qrbox.innerHTML = '<div id="qrCanvas"></div>';
+      
+      // Generate QR code using davidshimjs/qrcodejs API
+      new QRCode($("qrCanvas"), {
+        text: vcard,
         width: size,
-        margin: 2,
-        // maskPattern: 0-7 (autoselect by default)
+        height: size,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel[ecl]
       });
 
       // UI updates
@@ -187,10 +191,14 @@
 
     $("download").addEventListener('click', (e)=>{
       e.preventDefault();
-      const c = $("qrCanvas");
+      const qrImg = $("qrCanvas").querySelector('img');
+      if (!qrImg) {
+        alert('Please generate a QR code first');
+        return;
+      }
       const link = document.createElement('a');
       link.download = 'vcard-qr.png';
-      link.href = c.toDataURL('image/png');
+      link.href = qrImg.src;
       link.click();
     });
 
