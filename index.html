@@ -104,6 +104,12 @@
   <script src="qrcode.min.js"></script>
   <script>
     const $ = (id) => document.getElementById(id);
+    
+    let debounceTimer;
+    function debounceRender() {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(renderQR, 100);
+    }
 
     function esc(str){
       // vCard requires escaping \\ , ; , , and newlines within property values
@@ -222,6 +228,16 @@
     } else {
       setTimeout(renderQR, 100);
     }
+    
+    // Add auto-regenerate on input change
+    const inputs = ['first', 'last', 'fn', 'org', 'title', 'cell', 'work', 'email', 'url', 'street', 'city', 'region', 'postal', 'country', 'note', 'ecl', 'size'];
+    inputs.forEach(id => {
+      const el = $(id);
+      if (el) {
+        el.addEventListener('input', debounceRender);
+        el.addEventListener('change', debounceRender);
+      }
+    });
   </script>
 </body>
 </html>
