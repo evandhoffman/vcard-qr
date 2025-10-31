@@ -10,19 +10,28 @@
     .wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:24px}
     .card{background:#15171d;border:1px solid #252832;border-radius:14px;padding:16px}
     label{display:block;font-size:12px;color:#9aa3b2;margin:10px 0 6px}
-    input,textarea,select{width:100%;padding:10px;border-radius:10px;border:1px solid #2a2f3a;background:#0f1116;color:#e8e8e8}
+    input,textarea,select{width:100%;padding:10px;border-radius:10px;border:1px solid #2a2f3a;background:#0f1116;color:#e8e8e8;font-size:16px;box-sizing:border-box}
     textarea{min-height:76px}
     .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
     .btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
-    button{background:#2d6cdf;border:1px solid #3d7bf0;color:#fff;padding:10px 14px;border-radius:10px;cursor:pointer}
+    button{background:#2d6cdf;border:1px solid #3d7bf0;color:#fff;padding:10px 14px;border-radius:10px;cursor:pointer;font-size:14px}
     button.secondary{background:#1b1e27;border-color:#2b2f3a;color:#e8e8e8}
     .toggle-btn{background:#1b1e27;border:1px solid #2b2f3a;color:#9aa3b2;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px;margin-top:16px;width:100%}
     .extra-fields{display:none;margin-top:16px}
     .extra-fields.show{display:block}
     .muted{color:#9aa3b2;font-size:12px}
     .qrbox{display:flex;align-items:center;justify-content:center;min-height:320px;background:#0f1116;border:1px dashed #303645;border-radius:14px}
-    .code{white-space:pre;overflow:auto;background:#0f1116;border:1px solid #2a2f3a;border-radius:10px;padding:10px}
+    .code{white-space:pre;overflow:auto;background:#0f1116;border:1px solid #2a2f3a;border-radius:10px;padding:10px;font-size:11px}
     .ok{color:#a6f5a6} .warn{color:#ffd27e}
+    @media (max-width: 768px) {
+      body{padding:16px}
+      h1{font-size:20px}
+      .wrap{grid-template-columns:1fr;gap:16px}
+      .qrbox{min-height:280px}
+      .btns{gap:8px}
+      button{padding:12px 14px;width:100%}
+      .row{grid-template-columns:1fr;gap:8px}
+    }
   </style>
 </head>
 <body>
