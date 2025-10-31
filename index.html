@@ -16,6 +16,9 @@
     .btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
     button{background:#2d6cdf;border:1px solid #3d7bf0;color:#fff;padding:10px 14px;border-radius:10px;cursor:pointer}
     button.secondary{background:#1b1e27;border-color:#2b2f3a;color:#e8e8e8}
+    .toggle-btn{background:#1b1e27;border:1px solid #2b2f3a;color:#9aa3b2;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px;margin-top:16px;width:100%}
+    .extra-fields{display:none;margin-top:16px}
+    .extra-fields.show{display:block}
     .muted{color:#9aa3b2;font-size:12px}
     .qrbox{display:flex;align-items:center;justify-content:center;min-height:320px;background:#0f1116;border:1px dashed #303645;border-radius:14px}
     .code{white-space:pre;overflow:auto;background:#0f1116;border:1px solid #2a2f3a;border-radius:10px;padding:10px}
@@ -24,64 +27,61 @@
 </head>
 <body>
   <h1>vCard → QR (100% Client‑Side)</h1>
+  <p class="muted" style="margin:-8px 0 16px">QR code generation by <a href="https://davidshimjs.github.io/qrcodejs/" target="_blank" style="color:#3d7bf0">davidshimjs/qrcodejs</a></p>
   <div class="wrap">
     <div class="card">
-      <div class="row">
-        <div>
-          <label>First name</label>
-          <input id="first" placeholder="Evan" />
-        </div>
-        <div>
-          <label>Last name</label>
-          <input id="last" placeholder="Hoffman" />
-        </div>
-      </div>
-      <label>Full name (FN)</label>
-      <input id="fn" placeholder="Evan Hoffman" />
-      <label>Organization (ORG)</label>
+      <label>Name</label>
+      <input id="name" placeholder="Evan Hoffman" />
+      
+      <label>Company / Organization</label>
       <input id="org" placeholder="Acme Consulting" />
-      <label>Title (TITLE)</label>
-      <input id="title" placeholder="Campaign Advisor" />
-      <div class="row">
-        <div>
-          <label>Cell (TEL)</label>
-          <input id="cell" placeholder="+1-555-765-4321" />
-        </div>
-        <div>
-          <label>Work phone (TEL)</label>
-          <input id="work" placeholder="+1-555-123-4567" />
-        </div>
-      </div>
-      <label>Email (EMAIL)</label>
+      
+      <label>Phone</label>
+      <input id="phone" placeholder="+1-555-765-4321" />
+      
+      <label>Email</label>
       <input id="email" placeholder="evan@example.com" />
-      <label>URL</label>
-      <input id="url" placeholder="https://example.com" />
-      <label>Address (ADR)</label>
-      <div class="row">
-        <input id="street" placeholder="123 Main St" />
-        <input id="city" placeholder="Anytown" />
-      </div>
-      <div class="row">
-        <input id="region" placeholder="NY" />
-        <input id="postal" placeholder="10101" />
-      </div>
-      <input id="country" placeholder="USA" />
-      <label>Note</label>
-      <textarea id="note" placeholder="Preferred contact time: evenings"></textarea>
 
-      <div class="row">
-        <div>
-          <label>Error correction</label>
-          <select id="ecl">
-            <option value="M" selected>M (good balance)</option>
-            <option value="L">L (max capacity)</option>
-            <option value="Q">Q</option>
-            <option value="H">H (most robust)</option>
-          </select>
+      <button class="toggle-btn" id="toggleExtra">▼ Show more fields</button>
+
+      <div class="extra-fields" id="extraFields">
+        <label>Title / Position</label>
+        <input id="title" placeholder="Campaign Advisor" />
+        
+        <label>Work phone</label>
+        <input id="work" placeholder="+1-555-123-4567" />
+        
+        <label>Website URL</label>
+        <input id="url" placeholder="https://example.com" />
+        
+        <label>Address</label>
+        <div class="row">
+          <input id="street" placeholder="123 Main St" />
+          <input id="city" placeholder="Anytown" />
         </div>
-        <div>
-          <label>QR size (px)</label>
-          <input id="size" type="number" min="128" max="2048" value="384" />
+        <div class="row">
+          <input id="region" placeholder="NY" />
+          <input id="postal" placeholder="10101" />
+        </div>
+        <input id="country" placeholder="USA" />
+        
+        <label>Note</label>
+        <textarea id="note" placeholder="Preferred contact time: evenings"></textarea>
+
+        <div class="row">
+          <div>
+            <label>Error correction</label>
+            <select id="ecl">
+              <option value="M" selected>M (good balance)</option>
+              <option value="L">L (max capacity)</option>
+              <option value="Q">Q</option>
+              <option value="H">H (most robust)</option>
+            </select>
+          </div>
+          <div>
+            <label>QR size (px)</label>
+            <input id="size" type="number" min="128" max="2048" value="384" />
+          </div>
         </div>
       </div>
 
@@ -121,12 +121,21 @@
     }
 
     function makeVCard(){
-      const nLast = esc($("last").value.trim());
-      const nFirst = esc($("first").value.trim());
-      const fn = $("fn").value.trim() || [nFirst, nLast].filter(Boolean).join(' ');
+      const fullName = $("name").value.trim();
+      
+      // Infer first and last names from full name
+      const nameParts = fullName.split(/\s+/);
+      let nFirst = '', nLast = '';
+      if (nameParts.length === 1) {
+        nFirst = esc(nameParts[0]);
+      } else if (nameParts.length >= 2) {
+        nFirst = esc(nameParts[0]);
+        nLast = esc(nameParts.slice(1).join(' '));
+      }
+      
       const org = esc($("org").value.trim());
       const title = esc($("title").value.trim());
-      const cell = $("cell").value.replace(/\s+/g,'');
+      const phone = $("phone").value.replace(/\s+/g,'');
       const work = $("work").value.replace(/\s+/g,'');
       const email = $("email").value.trim();
       const url = $("url").value.trim();
@@ -142,11 +151,11 @@
         'BEGIN:VCARD',
         'VERSION:3.0',
         `N:${nLast};${nFirst};;;`,
-        `FN:${esc(fn)}`
+        `FN:${esc(fullName)}`
       ];
       if(org) lines.push(`ORG:${org}`);
       if(title) lines.push(`TITLE:${title}`);
-      if(cell) lines.push(`TEL;TYPE=CELL,VOICE:${cell}`);
+      if(phone) lines.push(`TEL;TYPE=CELL,VOICE:${phone}`);
       if(work) lines.push(`TEL;TYPE=WORK,VOICE:${work}`);
       if(email) lines.push(`EMAIL;TYPE=INTERNET:${email}`);
       if(street || city || region || postal || country){
@@ -219,6 +228,17 @@
         alert('vCard copied to clipboard');
       }
     });
+    
+    // Toggle extra fields
+    $("toggleExtra").addEventListener('click', (e) => {
+      e.preventDefault();
+      const extraFields = $("extraFields");
+      const btn = $("toggleExtra");
+      extraFields.classList.toggle('show');
+      btn.textContent = extraFields.classList.contains('show') 
+        ? '▲ Hide extra fields' 
+        : '▼ Show more fields';
+    });
 
     // Initial render after QRCode library is loaded
     if (document.readyState === 'loading') {
@@ -230,7 +250,7 @@
     }
     
     // Add auto-regenerate on input change
-    const inputs = ['first', 'last', 'fn', 'org', 'title', 'cell', 'work', 'email', 'url', 'street', 'city', 'region', 'postal', 'country', 'note', 'ecl', 'size'];
+    const inputs = ['name', 'org', 'phone', 'email', 'title', 'work', 'url', 'street', 'city', 'region', 'postal', 'country', 'note', 'ecl', 'size'];
     inputs.forEach(id => {
       const el = $(id);
       if (el) {
