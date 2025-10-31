@@ -200,8 +200,10 @@
       }
     });
 
-    // Initial render with placeholders
-    renderQR();
+    // Initial render after QRCode library is loaded
+    window.addEventListener('load', () => {
+      renderQR();
+    });
   </script>
 </body>
 </html>
