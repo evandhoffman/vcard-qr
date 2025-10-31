@@ -88,6 +88,7 @@
       <div class="btns">
         <button id="gen">Generate QR</button>
         <button id="download" class="secondary">Download PNG</button>
+        <button id="downloadVcf" class="secondary">Download VCF</button>
         <button id="copy" class="secondary">Copy vCard text</button>
       </div>
       <p class="muted" id="stats"></p>
@@ -211,10 +212,31 @@
         alert('Please generate a QR code first');
         return;
       }
+      // Create filename from name field
+      const name = $("name").value.trim() || 'Contact';
+      const filename = name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '') + '_qrcode.png';
+      
       const link = document.createElement('a');
-      link.download = 'vcard-qr.png';
+      link.download = filename;
       link.href = qrImg.src;
       link.click();
+    });
+
+    $("downloadVcf").addEventListener('click', (e)=>{
+      e.preventDefault();
+      const vcard = makeVCard();
+      
+      // Create filename from name field
+      const name = $("name").value.trim() || 'Contact';
+      const filename = name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '') + '.vcf';
+      
+      // Create blob and download
+      const blob = new Blob([vcard], { type: 'text/vcard;charset=utf-8' });
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = URL.createObjectURL(blob);
+      link.click();
+      URL.revokeObjectURL(link.href);
     });
 
     $("copy").addEventListener('click', async (e)=>{
