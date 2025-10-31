@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>vCard → QR (100% Client‑Side)</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Ubuntu,Arial,sans-serif;margin:0;padding:24px;line-height:1.35;background:#0b0c10;color:#e8e8e8}
+    h1{font-size:22px;margin:0 0 16px}
+    .wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:24px}
+    .card{background:#15171d;border:1px solid #252832;border-radius:14px;padding:16px}
+    label{display:block;font-size:12px;color:#9aa3b2;margin:10px 0 6px}
+    input,textarea,select{width:100%;padding:10px;border-radius:10px;border:1px solid #2a2f3a;background:#0f1116;color:#e8e8e8}
+    textarea{min-height:76px}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+    button{background:#2d6cdf;border:1px solid #3d7bf0;color:#fff;padding:10px 14px;border-radius:10px;cursor:pointer}
+    button.secondary{background:#1b1e27;border-color:#2b2f3a;color:#e8e8e8}
+    .muted{color:#9aa3b2;font-size:12px}
+    .qrbox{display:flex;align-items:center;justify-content:center;min-height:320px;background:#0f1116;border:1px dashed #303645;border-radius:14px}
+    .code{white-space:pre;overflow:auto;background:#0f1116;border:1px solid #2a2f3a;border-radius:10px;padding:10px}
+    .ok{color:#a6f5a6} .warn{color:#ffd27e}
+  </style>
+</head>
+<body>
+  <h1>vCard → QR (100% Client‑Side)</h1>
+  <div class="wrap">
+    <div class="card">
+      <div class="row">
+        <div>
+          <label>First name</label>
+          <input id="first" placeholder="Evan" />
+        </div>
+        <div>
+          <label>Last name</label>
+          <input id="last" placeholder="Hoffman" />
+        </div>
+      </div>
+      <label>Full name (FN)</label>
+      <input id="fn" placeholder="Evan Hoffman" />
+      <label>Organization (ORG)</label>
+      <input id="org" placeholder="Acme Consulting" />
+      <label>Title (TITLE)</label>
+      <input id="title" placeholder="Campaign Advisor" />
+      <div class="row">
+        <div>
+          <label>Cell (TEL)</label>
+          <input id="cell" placeholder="+1-555-765-4321" />
+        </div>
+        <div>
+          <label>Work phone (TEL)</label>
+          <input id="work" placeholder="+1-555-123-4567" />
+        </div>
+      </div>
+      <label>Email (EMAIL)</label>
+      <input id="email" placeholder="evan@example.com" />
+      <label>URL</label>
+      <input id="url" placeholder="https://example.com" />
+      <label>Address (ADR)</label>
+      <div class="row">
+        <input id="street" placeholder="123 Main St" />
+        <input id="city" placeholder="Bellmore" />
+      </div>
+      <div class="row">
+        <input id="region" placeholder="NY" />
+        <input id="postal" placeholder="11710" />
+      </div>
+      <input id="country" placeholder="USA" />
+      <label>Note</label>
+      <textarea id="note" placeholder="Preferred contact time: evenings"></textarea>
+
+      <div class="row">
+        <div>
+          <label>Error correction</label>
+          <select id="ecl">
+            <option value="M" selected>M (good balance)</option>
+            <option value="L">L (max capacity)</option>
+            <option value="Q">Q</option>
+            <option value="H">H (most robust)</option>
+          </select>
+        </div>
+        <div>
+          <label>QR size (px)</label>
+          <input id="size" type="number" min="128" max="2048" value="384" />
+        </div>
+      </div>
+
+      <div class="btns">
+        <button id="gen">Generate QR</button>
+        <button id="download" class="secondary">Download PNG</button>
+        <button id="copy" class="secondary">Copy vCard text</button>
+      </div>
+      <p class="muted" id="stats"></p>
+    </div>
+
+    <div class="card">
+      <div class="qrbox"><canvas id="qrCanvas" width="384" height="384"></canvas></div>
+      <label>Preview vCard payload</label>
+      <pre class="code" id="preview"></pre>
+    </div>
+  </div>
+
+  <!-- QR generation lib (pure client-side). For fully offline use, download this file and reference it locally. -->
+  <script src="https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    function esc(str){
+      // vCard requires escaping \\ , ; , , and newlines within property values
+      return String(str||"")
+        .replace(/\\/g,'\\\\')
+        .replace(/\n/g,'\\n')
+        .replace(/;/g,'\\;')
+        .replace(/,/g,'\\,');
+    }
+
+    function makeVCard(){
+      const nLast = esc($("last").value.trim());
+      const nFirst = esc($("first").value.trim());
+      const fn = $("fn").value.trim() || [nFirst, nLast].filter(Boolean).join(' ');
+      const org = esc($("org").value.trim());
+      const title = esc($("title").value.trim());
+      const cell = $("cell").value.replace(/\s+/g,'');
+      const work = $("work").value.replace(/\s+/g,'');
+      const email = $("email").value.trim();
+      const url = $("url").value.trim();
+      const street = esc($("street").value.trim());
+      const city = esc($("city").value.trim());
+      const region = esc($("region").value.trim());
+      const postal = esc($("postal").value.trim());
+      const country = esc($("country").value.trim());
+      const note = esc($("note").value.trim());
+
+      // Build vCard 3.0 with CRLF line breaks (\r\n)
+      const lines = [
+        'BEGIN:VCARD',
+        'VERSION:3.0',
+        `N:${nLast};${nFirst};;;`,
+        `FN:${esc(fn)}`
+      ];
+      if(org) lines.push(`ORG:${org}`);
+      if(title) lines.push(`TITLE:${title}`);
+      if(cell) lines.push(`TEL;TYPE=CELL,VOICE:${cell}`);
+      if(work) lines.push(`TEL;TYPE=WORK,VOICE:${work}`);
+      if(email) lines.push(`EMAIL;TYPE=INTERNET:${email}`);
+      if(street || city || region || postal || country){
+        // ADR: PO Box; Extended; Street; City; Region; Postal; Country
+        lines.push(`ADR;TYPE=WORK:;;${street};${city};${region};${postal};${country}`);
+      }
+      if(url) lines.push(`URL:${url}`);
+      if(note) lines.push(`NOTE:${note}`);
+      lines.push('END:VCARD');
+
+      const vcard = lines.join('\r\n');
+      return vcard;
+    }
+
+    async function renderQR(){
+      const vcard = makeVCard();
+      const size = Math.max(128, Math.min(parseInt($("size").value||"384",10), 2048));
+      const ecl = $("ecl").value || 'M';
+      const canvas = $("qrCanvas");
+      canvas.width = size; canvas.height = size;
+
+      // Render QR (UTF‑8 safe)
+      await QRCode.toCanvas(canvas, vcard, {
+        errorCorrectionLevel: ecl,
+        width: size,
+        margin: 2,
+        // maskPattern: 0-7 (autoselect by default)
+      });
+
+      // UI updates
+      $("preview").textContent = vcard;
+      const bytes = new TextEncoder().encode(vcard).length;
+      const warn = bytes > 2500 ? 'warn' : 'ok';
+      $("stats").innerHTML = `Payload size: <span class="${warn}">${bytes} bytes</span> · Tip: keep under ~2900 bytes for best compatibility.`;
+    }
+
+    $("gen").addEventListener('click', (e)=>{ e.preventDefault(); renderQR(); });
+
+    $("download").addEventListener('click', (e)=>{
+      e.preventDefault();
+      const c = $("qrCanvas");
+      const link = document.createElement('a');
+      link.download = 'vcard-qr.png';
+      link.href = c.toDataURL('image/png');
+      link.click();
+    });
+
+    $("copy").addEventListener('click', async (e)=>{
+      e.preventDefault();
+      const v = makeVCard();
+      try{ await navigator.clipboard.writeText(v); alert('vCard copied to clipboard'); }
+      catch(_){
+        // Fallback
+        const ta = document.createElement('textarea');
+        ta.value = v; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+        alert('vCard copied to clipboard');
+      }
+    });
+
+    // Initial render with placeholders
+    renderQR();
+  </script>
+</body>
+</html>
