@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Calendar Event → QR (100% Client‑Side)</title>
+  <style>
+    *{box-sizing:border-box}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Ubuntu,Arial,sans-serif;margin:0;padding:24px;line-height:1.35;background:#0b0c10;color:#e8e8e8;overflow-x:hidden}
+    h1{font-size:22px;margin:0 0 16px}
+    .wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:24px}
+    .card{background:#15171d;border:1px solid #252832;border-radius:14px;padding:16px}
+    label{display:block;font-size:12px;color:#9aa3b2;margin:10px 0 6px}
+    input,textarea,select{width:100%;padding:10px;border-radius:10px;border:1px solid #2a2f3a;background:#0f1116;color:#e8e8e8;font-size:16px;box-sizing:border-box;max-width:100%}
+    textarea{min-height:76px;resize:vertical}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+    button{background:#2d6cdf;border:1px solid #3d7bf0;color:#fff;padding:10px 14px;border-radius:10px;cursor:pointer;font-size:14px}
+    button.secondary{background:#1b1e27;border-color:#2b2f3a;color:#e8e8e8}
+    .toggle-btn{background:#1b1e27;border:1px solid #2b2f3a;color:#9aa3b2;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px;margin-top:16px;width:100%}
+    .extra-fields{display:none;margin-top:16px}
+    .extra-fields.show{display:block}
+    .muted{color:#9aa3b2;font-size:12px}
+    .qrbox{display:flex;align-items:center;justify-content:center;min-height:320px;background:#0f1116;border:1px dashed #303645;border-radius:14px}
+    .code{white-space:pre;overflow:auto;background:#0f1116;border:1px solid #2a2f3a;border-radius:10px;padding:10px;font-size:11px}
+    .ok{color:#a6f5a6} .warn{color:#ffd27e}
+    .time-group{display:flex;align-items:center;gap:8px;margin-top:6px}
+    .time-group input[type="checkbox"]{width:auto;margin:0}
+    @media (max-width: 768px) {
+      body{padding:12px}
+      h1{font-size:20px}
+      .wrap{grid-template-columns:1fr;gap:16px}
+      .card{padding:12px}
+      .qrbox{min-height:280px}
+      .btns{gap:8px}
+      button{padding:12px 14px;width:100%}
+      .row{grid-template-columns:1fr;gap:8px}
+    }
+  </style>
+</head>
+<body>
+  <h1>Calendar Event → QR (100% Client‑Side)</h1>
+  <p class="muted" style="margin:-8px 0 16px">QR code generation by <a href="https://davidshimjs.github.io/qrcodejs/" target="_blank" style="color:#3d7bf0">davidshimjs/qrcodejs</a></p>
+  <div class="wrap">
+    <div class="card">
+      <label>Event Title <span style="color:#ffd27e">*</span></label>
+      <input id="title" placeholder="Team Meeting" />
+      
+      <label>Start Date <span style="color:#ffd27e">*</span></label>
+      <input id="startDate" type="date" />
+      
+      <div class="time-group">
+        <input type="checkbox" id="hasStartTime" />
+        <label for="hasStartTime" style="margin:0">Include start time</label>
+      </div>
+      <input id="startTime" type="time" style="margin-top:6px;display:none" />
+      
+      <label>End Date</label>
+      <input id="endDate" type="date" />
+      
+      <div class="time-group">
+        <input type="checkbox" id="hasEndTime" />
+        <label for="hasEndTime" style="margin:0">Include end time</label>
+      </div>
+      <input id="endTime" type="time" style="margin-top:6px;display:none" />
+      
+      <label>Timezone</label>
+      <select id="timezone">
+        <option value="America/New_York">America/New York (EST/EDT)</option>
+        <option value="America/Chicago">America/Chicago (CST/CDT)</option>
+        <option value="America/Denver">America/Denver (MST/MDT)</option>
+        <option value="America/Los_Angeles">America/Los Angeles (PST/PDT)</option>
+        <option value="America/Anchorage">America/Anchorage (AKST/AKDT)</option>
+        <option value="Pacific/Honolulu">Pacific/Honolulu (HST)</option>
+        <option value="UTC">UTC</option>
+        <option value="Europe/London">Europe/London (GMT/BST)</option>
+        <option value="Europe/Paris">Europe/Paris (CET/CEST)</option>
+        <option value="Europe/Berlin">Europe/Berlin (CET/CEST)</option>
+        <option value="Asia/Tokyo">Asia/Tokyo (JST)</option>
+        <option value="Asia/Shanghai">Asia/Shanghai (CST)</option>
+        <option value="Asia/Dubai">Asia/Dubai (GST)</option>
+        <option value="Australia/Sydney">Australia/Sydney (AEDT/AEST)</option>
+      </select>
+      
+      <label>Location</label>
+      <input id="location" placeholder="Conference Room A, 123 Main St" />
+
+      <button class="toggle-btn" id="toggleExtra">▼ Show more fields</button>
+
+      <div class="extra-fields" id="extraFields">
+        <label>Description / Notes</label>
+        <textarea id="description" placeholder="Agenda: Q4 planning discussion"></textarea>
+
+        <label>Organizer Name</label>
+        <input id="organizer" placeholder="Jane Smith" />
+        
+        <label>Organizer Email</label>
+        <input id="organizerEmail" type="email" placeholder="jane@example.com" />
+
+        <div class="row">
+          <div>
+            <label>Error correction</label>
+            <select id="ecl">
+              <option value="M" selected>M (good balance)</option>
+              <option value="L">L (max capacity)</option>
+              <option value="Q">Q</option>
+              <option value="H">H (most robust)</option>
+            </select>
+          </div>
+          <div>
+            <label>QR size (px)</label>
+            <input id="size" type="number" min="128" max="2048" value="384" />
+          </div>
+        </div>
+      </div>
+
+      <div class="btns">
+        <button id="gen">Generate QR</button>
+        <button id="download" class="secondary">Download PNG</button>
+        <button id="downloadIcs" class="secondary">Download ICS</button>
+        <button id="copy" class="secondary">Copy iCal text</button>
+      </div>
+      <p class="muted" id="stats"></p>
+    </div>
+
+    <div class="card">
+      <div class="qrbox"><div id="qrCanvas"></div></div>
+      <label>Preview iCalendar payload</label>
+      <pre class="code" id="preview"></pre>
+    </div>
+  </div>
+
+  <!-- QR generation lib (pure client-side). For fully offline use, download this file and reference it locally. -->
+  <script src="qrcode.min.js"></script>
+  <script src="vcard-utils.js"></script>
+  <script src="calendar-app.js"></script>
+</body>
+</html>
