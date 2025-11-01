@@ -137,6 +137,34 @@
         .replace(/,/g,'\\,');
     }
     
+    function sanitize(str, allowedChars = '') {
+      // Remove control characters and non-printable chars, but allow common punctuation
+      // Allows: letters, numbers, spaces, apostrophes, hyphens, periods, and any additional chars
+      const pattern = new RegExp(`[^\u0020-\u007E\u00A0-\u00FF${allowedChars}]`, 'g');
+      return String(str || '')
+        .replace(pattern, '') // Remove disallowed characters
+        .replace(/[\x00-\x1F\x7F]/g, '') // Remove control characters
+        .trim();
+    }
+    
+    function sanitizeName(str) {
+      // Allow letters, spaces, hyphens, apostrophes, periods
+      return sanitize(str, '').replace(/[^a-zA-Z\s\-'.]/g, '');
+    }
+    
+    function sanitizeText(str) {
+      // For general text fields, allow more characters
+      return sanitize(str, '@#$%&*()+=[]{}|:;"<>?/');
+    }
+    
+    function sanitizeUrl(str) {
+      // Basic URL validation/cleaning
+      str = str.trim();
+      if (!str) return '';
+      // Remove any whitespace and control chars
+      return str.replace(/[\s\x00-\x1F\x7F]/g, '');
+    }
+    
     function md5(str) {
       // Simple MD5 implementation for gravatar hash
       function md5cycle(x, k) {
@@ -275,10 +303,10 @@
     }
 
     function makeVCard(){
-      const fullName = $("name").value.trim();
+      const fullName = sanitizeName($("name").value);
       
       // Infer first and last names from full name
-      const nameParts = fullName.split(/\s+/);
+      const nameParts = fullName.split(/\s+/).filter(Boolean);
       let nFirst = '', nLast = '';
       if (nameParts.length === 1) {
         nFirst = esc(nameParts[0]);
@@ -287,8 +315,8 @@
         nLast = esc(nameParts.slice(1).join(' '));
       }
       
-      const org = esc($("org").value.trim());
-      const title = esc($("title").value.trim());
+      const org = esc(sanitizeText($("org").value));
+      const title = esc(sanitizeText($("title").value));
       
       // Normalize phone numbers: keep + and digits, convert other chars to spaces, then collapse spaces
       const normalizePhone = (val) => {
@@ -297,14 +325,14 @@
       const phone = normalizePhone($("phone").value);
       const work = normalizePhone($("work").value);
       
-      const email = $("email").value.trim();
-      const url = $("url").value.trim();
-      const street = esc($("street").value.trim());
-      const city = esc($("city").value.trim());
-      const region = esc($("region").value.trim());
-      const postal = esc($("postal").value.trim());
-      const country = esc($("country").value.trim());
-      const note = esc($("note").value.trim());
+      const email = $("email").value.trim().toLowerCase();
+      const url = sanitizeUrl($("url").value);
+      const street = esc(sanitizeText($("street").value));
+      const city = esc(sanitizeText($("city").value));
+      const region = esc(sanitizeText($("region").value));
+      const postal = esc($("postal").value.replace(/[^a-zA-Z0-9\s-]/g, ''));
+      const country = esc(sanitizeText($("country").value));
+      const note = esc(sanitizeText($("note").value));
 
       // Build vCard 3.0 with CRLF line breaks (\r\n)
       const lines = [
