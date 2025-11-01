@@ -289,8 +289,14 @@
       
       const org = esc($("org").value.trim());
       const title = esc($("title").value.trim());
-      const phone = $("phone").value.replace(/\s+/g,'');
-      const work = $("work").value.replace(/\s+/g,'');
+      
+      // Normalize phone numbers: keep + and digits, convert other chars to spaces, then collapse spaces
+      const normalizePhone = (val) => {
+        return val.replace(/[^\d+]/g, ' ').replace(/\s+/g, ' ').trim();
+      };
+      const phone = normalizePhone($("phone").value);
+      const work = normalizePhone($("work").value);
+      
       const email = $("email").value.trim();
       const url = $("url").value.trim();
       const street = esc($("street").value.trim());
