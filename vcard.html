@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>vCard → QR (100% Client‑Side)</title>
+  <style>
+    *{box-sizing:border-box}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Ubuntu,Arial,sans-serif;margin:0;padding:24px;line-height:1.35;background:#0b0c10;color:#e8e8e8;overflow-x:hidden}
+    h1{font-size:22px;margin:0 0 16px}
+    .wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:24px}
+    .card{background:#15171d;border:1px solid #252832;border-radius:14px;padding:16px}
+    label{display:block;font-size:12px;color:#9aa3b2;margin:10px 0 6px}
+    input,textarea,select{width:100%;padding:10px;border-radius:10px;border:1px solid #2a2f3a;background:#0f1116;color:#e8e8e8;font-size:16px;box-sizing:border-box;max-width:100%}
+    textarea{min-height:76px;resize:vertical}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+    button{background:#2d6cdf;border:1px solid #3d7bf0;color:#fff;padding:10px 14px;border-radius:10px;cursor:pointer;font-size:14px}
+    button.secondary{background:#1b1e27;border-color:#2b2f3a;color:#e8e8e8}
+    .toggle-btn{background:#1b1e27;border:1px solid #2b2f3a;color:#9aa3b2;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px;margin-top:16px;width:100%}
+    .extra-fields{display:none;margin-top:16px}
+    .extra-fields.show{display:block}
+    .muted{color:#9aa3b2;font-size:12px}
+    .qrbox{display:flex;align-items:center;justify-content:center;min-height:320px;background:#0f1116;border:1px dashed #303645;border-radius:14px}
+    .code{white-space:pre;overflow:auto;background:#0f1116;border:1px solid #2a2f3a;border-radius:10px;padding:10px;font-size:11px}
+    .ok{color:#a6f5a6} .warn{color:#ffd27e}
+    @media (max-width: 768px) {
+      body{padding:12px}
+      h1{font-size:20px}
+      .wrap{grid-template-columns:1fr;gap:16px}
+      .card{padding:12px}
+      .qrbox{min-height:280px}
+      .btns{gap:8px}
+      button{padding:12px 14px;width:100%}
+      .row{grid-template-columns:1fr;gap:8px}
+    }
+  </style>
+</head>
+<body>
+  <h1>vCard → QR (100% Client‑Side)</h1>
+  <p class="muted" style="margin:-8px 0 16px">QR code generation by <a href="https://davidshimjs.github.io/qrcodejs/" target="_blank" style="color:#3d7bf0">davidshimjs/qrcodejs</a></p>
+  <div class="wrap">
+    <div class="card">
+      <label>Name</label>
+      <input id="name" placeholder="Evan Hoffman" />
+      
+      <label>Company / Organization</label>
+      <input id="org" placeholder="Acme Consulting" />
+      
+      <label>Phone</label>
+      <input id="phone" placeholder="+1-555-765-4321" />
+      
+      <label>Email</label>
+      <input id="email" placeholder="evan@example.com" />
+      
+      <label style="display:flex;align-items:center;gap:6px">
+        <input type="checkbox" id="useGravatar" style="width:auto;margin:0" />
+        <span>Include Gravatar photo (from email)</span>
+      </label>
+
+      <button class="toggle-btn" id="toggleExtra">▼ Show more fields</button>
+
+      <div class="extra-fields" id="extraFields">
+        <label>Title / Position</label>
+        <input id="title" placeholder="Campaign Advisor" />
+        
+        <label>Work phone</label>
+        <input id="work" placeholder="+1-555-123-4567" />
+        
+        <label>Website URL</label>
+        <input id="url" placeholder="https://example.com" />
+        
+        <label>Address</label>
+        <div class="row">
+          <input id="street" placeholder="123 Main St" />
+          <input id="city" placeholder="Anytown" />
+        </div>
+        <div class="row">
+          <input id="region" placeholder="NY" />
+          <input id="postal" placeholder="10101" />
+        </div>
+        <input id="country" placeholder="USA" />
+        
+        <label>Note</label>
+        <textarea id="note" placeholder="Preferred contact time: evenings"></textarea>
+
+        <div class="row">
+          <div>
+            <label>Error correction</label>
+            <select id="ecl">
+              <option value="M" selected>M (good balance)</option>
+              <option value="L">L (max capacity)</option>
+              <option value="Q">Q</option>
+              <option value="H">H (most robust)</option>
+            </select>
+          </div>
+          <div>
+            <label>QR size (px)</label>
+            <input id="size" type="number" min="128" max="2048" value="384" />
+          </div>
+        </div>
+      </div>
+
+      <div class="btns">
+        <button id="gen">Generate QR</button>
+        <button id="download" class="secondary">Download PNG</button>
+        <button id="downloadVcf" class="secondary">Download VCF</button>
+        <button id="copy" class="secondary">Copy vCard text</button>
+      </div>
+      <p class="muted" id="stats"></p>
+    </div>
+
+    <div class="card">
+      <div class="qrbox"><div id="qrCanvas"></div></div>
+      <label>Preview vCard payload</label>
+      <pre class="code" id="preview"></pre>
+    </div>
+  </div>
+
+  <!-- QR generation lib (pure client-side). For fully offline use, download this file and reference it locally. -->
+  <script src="qrcode.min.js"></script>
+  <script src="vcard-utils.js"></script>
+  <script src="vcard-app.js"></script>
+</body>
+</html>
